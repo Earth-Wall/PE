@@ -1,0 +1,400 @@
+https://blog.csdn.net/evileagle/article/details/11693499
+
+IMAGE_DOS_HEADER // DOS头，（不改）第一个WORD是文件类型，（可改）最后一个DWORD是PE头地址，（瞎改）其他数据
+dos_stub         // （瞎改）16位汇编代码，在16位系统运行弹出程序不能在16位系统运行
+IMAGE_NT_HEADERS // PE头
+    DWORD   Signature;            // （不改）签名，值固定为0x00004550（“PE00"）
+    IMAGE_FILE_HEADER FileHeader; // 文件头，描述文件信息
+        WORD    Machine;              // （不改）机器（程序运行需要的CPU）
+            IMAGE_FILE_MACHINE_I386  0x014c // Intel 386.
+            IMAGE_FILE_MACHINE_AMD64 0x8664 // AMD64 (K8)
+        WORD    NumberOfSections;     // （重要）节（段）数量
+        DWORD   TimeDateStamp;        // （瞎改）时间戳（程序创建时间）
+        DWORD   PointerToSymbolTable; // （瞎改）符号表（调试文件）地址，微软自己用.pdb文件，其他编译器的调试文件嵌入源文件最后
+        DWORD   NumberOfSymbols;      // （瞎改）符号表（调试文件）数量，微软自己用.pdb文件，其他编译器的调试文件嵌入源文件最后
+        WORD    SizeOfOptionalHeader; // （重要）选项头大小，用来识别变长的选项头结构体
+        WORD    Characteristics;      // （可改）属性（解析后面头的方式）
+            IMAGE_FILE_RELOCS_STRIPPED         0x0001 // Relocation info stripped from file.
+            IMAGE_FILE_EXECUTABLE_IMAGE        0x0002 // File is executable  (i.e. no unresolved external references).
+            IMAGE_FILE_LINE_NUMS_STRIPPED      0x0004 // Line nunbers stripped from file.
+            IMAGE_FILE_LOCAL_SYMS_STRIPPED     0x0008 // Local symbols stripped from file.
+            IMAGE_FILE_AGGRESIVE_WS_TRIM       0x0010 // Aggressively trim working set
+            IMAGE_FILE_LARGE_ADDRESS_AWARE     0x0020 // App can handle >2gb addresses
+            IMAGE_FILE_BYTES_REVERSED_LO       0x0080 // Bytes of machine word are reversed.
+            IMAGE_FILE_32BIT_MACHINE           0x0100 // 32 bit word machine.
+            IMAGE_FILE_DEBUG_STRIPPED          0x0200 // Debugging info stripped from file in .DBG file
+            IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP 0x0400 // If Image is on removable media, copy and run from the swap file.
+            IMAGE_FILE_NET_RUN_FROM_SWAP       0x0800 // If Image is on Net, copy and run from the swap file.
+            IMAGE_FILE_SYSTEM                  0x1000 // System File.
+            IMAGE_FILE_DLL                     0x2000 // File is a DLL.
+            IMAGE_FILE_UP_SYSTEM_ONLY          0x4000 // File should only be run on a UP machine
+            IMAGE_FILE_BYTES_REVERSED_HI       0x8000 // Bytes of machine word are reversed.
+    IMAGE_OPTIONAL_HEADER OptionalHeader; // 选项头，描述程序如何装载
+        WORD    Magic;                       // （不改）选项头类型
+            IMAGE_NT_OPTIONAL_HDR32_MAGIC 0x10b // 32位
+            IMAGE_NT_OPTIONAL_HDR64_MAGIC 0x20b // 64位
+            IMAGE_ROM_OPTIONAL_HDR_MAGIC  0x107 // 嵌入式
+        BYTE    MajorLinkerVersion;          // （瞎改）链接器主版本
+        BYTE    MinorLinkerVersion;          // （瞎改）链接器副版本
+        DWORD   SizeOfCode;                  // （瞎改）代码段大小，用来反OD
+        DWORD   SizeOfInitializedData;       // （瞎改）已初始化数据段大小
+        DWORD   SizeOfUninitializedData;     // （瞎改）未初始化数据段大小
+        DWORD   AddressOfEntryPoint;         // （重要）入口地址（EntryPoint）（RVA），OEP（OldEntryPoint）
+        DWORD   BaseOfCode;                  // （瞎改）代码建议装载地址
+        DWORD   BaseOfData;                  // （瞎改）数据建议装载地址
+        DWORD   ImageBase;                   // （重要）模块建议装载地址（VA），exe不开随机基址一定满足
+        DWORD   SectionAlignment;            // （重要）内存对齐值
+        DWORD   FileAlignment;               // （重要）文件对齐值
+        WORD    MajorOperatingSystemVersion; // （瞎改）操作系统主版本
+        WORD    MinorOperatingSystemVersion; // （瞎改）操作系统副版本
+        WORD    MajorImageVersion;           // （瞎改）操作系统镜像主版本
+        WORD    MinorImageVersion;           // （瞎改）操作系统镜像副版本
+        WORD    MajorSubsystemVersion;       // （可改）子系统（Console GUI ...）主版本
+        WORD    MinorSubsystemVersion;       // （瞎改）子系统（Console GUI ...）副版本
+        DWORD   Win32VersionValue;           // （瞎改）Win32版本值
+        DWORD   SizeOfImage;                 // （重要）镜像大小（PE文件的总内存大小），和SectionAlignment对齐，老系统不能改大
+        DWORD   SizeOfHeaders;               // （重要）头大小（所有头的总文件大小），和FileAlignment对齐
+        DWORD   CheckSum;                    // （瞎改）校验和，系统不检测普通程序，只检测驱动，可以用MapFileAndCheckSum计算
+        WORD    Subsystem;                   // （不改）子系统（Console GUI ...），和链接选项/subsystem相关
+            IMAGE_SUBSYSTEM_WINDOWS_GUI 2 // Image runs in the Windows GUI subsystem.
+            IMAGE_SUBSYSTEM_WINDOWS_CUI 3 // Image runs in the Windows character subsystem.
+        WORD    DllCharacteristics;          // （可改）dll属性
+            IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA           0x0020 // 
+            IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE              0x0040 // （可改）是否开启随机基址
+            IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY           0x0080 // （瞎改）数字签名，系统不检测普通程序，只检测驱动
+            IMAGE_DLLCHARACTERISTICS_NX_COMPAT                 0x0100 // （可改）数据执行保护（不是代码段不能 执行代码）
+            IMAGE_DLLCHARACTERISTICS_NO_ISOLATION              0x0200 // 
+            IMAGE_DLLCHARACTERISTICS_NO_SEH                    0x0400 // 
+            IMAGE_DLLCHARACTERISTICS_NO_BIND                   0x0800 // 
+            IMAGE_DLLCHARACTERISTICS_APPCONTAINER              0x1000 // 
+            IMAGE_DLLCHARACTERISTICS_WDM_DRIVER                0x2000 // 
+            IMAGE_DLLCHARACTERISTICS_GUARD_CF                  0x4000 // 
+            IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AER_AWARE 0x8000 // 
+        DWORD   SizeOfStackReserve;          // （可改）保留栈空间大小
+        DWORD   SizeOfStackCommit;           // （可改）立刻申请栈空间大小
+        DWORD   SizeOfHeapReserve;           // （可改）保留堆空间大小
+        DWORD   SizeOfHeapCommit;            // （可改）立刻申请堆空间大小
+        DWORD   LoaderFlags;                 // （瞎改）调试器标志
+        DWORD   NumberOfRvaAndSizes;         // （不改）数据目录项数
+        IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES]; // 数据目录，最大16项
+            IMAGE_DATA_DIRECTORY        // 数据目录数组元素
+				DWORD   VirtualAddress; // 表内存地址（RVA）
+				DWORD   Size;           // 表大小
+            IMAGE_DIRECTORY_ENTRY_EXPORT          0 // （常用）Export Directory（导出表）
+                DWORD   VirtualAddress; // （重要）表内存地址（RVA）
+                DWORD   Size;           // （重要）表大小
+            IMAGE_DIRECTORY_ENTRY_IMPORT          1 // （常用）Import Directory（导入表）
+                DWORD   VirtualAddress; // （重要）表内存地址（RVA）
+                DWORD   Size;           // （瞎改）表大小，系统从VirtualAddress地址读到全0截止
+            IMAGE_DIRECTORY_ENTRY_RESOURCE        2 // （常用）Resource Directory（资源表）
+                DWORD   VirtualAddress; // （重要）表内存地址（RVA）
+                DWORD   Size;           // 表大小
+            IMAGE_DIRECTORY_ENTRY_BASERELOC       5 // （常用）Base Relocation Table（重定位表）
+                DWORD   VirtualAddress; // （重要）表内存地址（RVA）
+                DWORD   Size;           // （重要）表大小
+            IMAGE_DIRECTORY_ENTRY_TLS             9 // （常用）TLS Directory（TLS）
+                DWORD   VirtualAddress; // （重要）表内存地址（RVA）
+                DWORD   Size;           // 表大小
+            IMAGE_DIRECTORY_ENTRY_EXCEPTION       3 // Exception Directory（异常表）
+            IMAGE_DIRECTORY_ENTRY_SECURITY        4 // Security Directory
+            IMAGE_DIRECTORY_ENTRY_DEBUG           6 // Debug Directory
+            IMAGE_DIRECTORY_ENTRY_COPYRIGHT       7 // (X86 usage)
+            IMAGE_DIRECTORY_ENTRY_ARCHITECTURE    7 // Architecture Specific Data
+            IMAGE_DIRECTORY_ENTRY_GLOBALPTR       8 // RVA of GP
+            IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG    10 // Load Configuration Directory    
+            IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT   11 // Bound Import Directory in header（绑定导入表）
+            IMAGE_DIRECTORY_ENTRY_IAT            12 // Import Address Table（导入地址表）
+			IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT   13 // Delay Load Import Descriptors（延迟加载表）
+            IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR 14 // COM Runtime descriptor
+IMAGE_SECTION_HEADER // 节表，描述文件的数据如何映射到内存
+    BYTE    Name[IMAGE_SIZEOF_SHORT_NAME]; // （可改）节名称，（必须）代码段.text，未初始化代码段.textbss，常量区.rdata，全局数据区.data可读可写，异常信息.pdata和.idata，运行库信息.msvcjmc，资源.rsrc，重定位信息.reloc
+    union {                                // 
+        DWORD   PhysicalAddress;           // （不用）物理地址，兼容其他机器
+        DWORD   VirtualSize;               // （重要）内存大小，为0以文件大小内存对齐
+    } Misc;                                // 
+    DWORD   VirtualAddress;                // （重要）内存地址（RVA）
+    DWORD   SizeOfRawData;                 // （重要）原始（文件）数据大小，以前设计为0是未初始化数据区，不占用文件占用内存，现在设计内存大小=数据总大小 文件大小=已初始化数据大小
+    DWORD   PointerToRawData;              // （重要）原始（文件）数据地址（FA），从文件PointerToRawData地址，拷贝SizeOfRawData大小，到内存VirtualAddress，占内存VirtualSize（未对齐）。VirtualSize和SizeOfRawData可能小于等于大于。VirtualSize内存对齐之后实际内存空间就大于SizeOfRawData了
+    DWORD   PointerToRelocations;          // （瞎改）重定位信息
+    DWORD   PointerToLinenumbers;          // （瞎改）重定位信息
+    WORD    NumberOfRelocations;           // （瞎改）重定位信息
+    WORD    NumberOfLinenumbers;           // （瞎改）重定位信息
+    DWORD   Characteristics;               // （重要）内存属性
+        IMAGE_SCN_CNT_CODE               0x00000020 // Section contains code.
+        IMAGE_SCN_CNT_INITIALIZED_DATA   0x00000040 // Section contains initialized data.
+        IMAGE_SCN_CNT_UNINITIALIZED_DATA 0x00000080 // Section contains uninitialized data.
+        IMAGE_SCN_LNK_INFO               0x00000200 // Section contains comments or some other type of information.
+        IMAGE_SCN_LNK_REMOVE             0x00000800 // Section contents will not become part of image.
+        IMAGE_SCN_LNK_COMDAT             0x00001000 // Section contents comdat.
+        IMAGE_SCN_NO_DEFER_SPEC_EXC      0x00004000 // Reset speculative exceptions handling bits in the TLB entries for this section.
+        IMAGE_SCN_GPREL                  0x00008000 // Section content can be accessed relative to GP
+        IMAGE_SCN_MEM_FARDATA            0x00008000 //
+        IMAGE_SCN_MEM_PURGEABLE          0x00020000 //
+        IMAGE_SCN_MEM_16BIT              0x00020000 //
+        IMAGE_SCN_MEM_LOCKED             0x00040000 //
+        IMAGE_SCN_MEM_PRELOAD            0x00080000 //
+        IMAGE_SCN_ALIGN_1BYTES           0x00100000 //
+        IMAGE_SCN_ALIGN_2BYTES           0x00200000 //
+        IMAGE_SCN_ALIGN_4BYTES           0x00300000 //
+        IMAGE_SCN_ALIGN_8BYTES           0x00400000 //
+        IMAGE_SCN_ALIGN_16BYTES          0x00500000 // Default alignment if no others are specified.
+        IMAGE_SCN_ALIGN_32BYTES          0x00600000 //
+        IMAGE_SCN_ALIGN_64BYTES          0x00700000 //
+        IMAGE_SCN_ALIGN_128BYTES         0x00800000 //
+        IMAGE_SCN_ALIGN_256BYTES         0x00900000 //
+        IMAGE_SCN_ALIGN_512BYTES         0x00A00000 //
+        IMAGE_SCN_ALIGN_1024BYTES        0x00B00000 //
+        IMAGE_SCN_ALIGN_2048BYTES        0x00C00000 //
+        IMAGE_SCN_ALIGN_4096BYTES        0x00D00000 //
+        IMAGE_SCN_ALIGN_8192BYTES        0x00E00000 //
+        IMAGE_SCN_ALIGN_MASK             0x00F00000 //
+        IMAGE_SCN_LNK_NRELOC_OVFL        0x01000000 // Section contains extended relocations.（是否扩展重定位信息）
+        IMAGE_SCN_MEM_DISCARDABLE        0x02000000 // Section can be discarded.
+        IMAGE_SCN_MEM_NOT_CACHED         0x04000000 // Section is not cachable.（是否缓存）
+        IMAGE_SCN_MEM_NOT_PAGED          0x08000000 // Section is not pageable.
+        IMAGE_SCN_MEM_SHARED             0x10000000 // Section is shareable.（可共享）
+        IMAGE_SCN_MEM_EXECUTE            0x20000000 // Section is executable.（可执行）
+        IMAGE_SCN_MEM_READ               0x40000000 // Section is readable.（可读）
+        IMAGE_SCN_MEM_WRITE              0x80000000 // Section is writeable.（可写）
+
+
+
+IMAGE_EXPORT_DIRECTORY             // 导出表数组元素
+    DWORD   Characteristics;       // （瞎改）
+    DWORD   TimeDateStamp;         // （瞎改）
+    WORD    MajorVersion;          // （瞎改）
+    WORD    MinorVersion;          // （瞎改）
+    DWORD   Name;                  // （瞎改）dll名称
+    DWORD   Base;                  // （重要）基数
+    DWORD   NumberOfFunctions;     // （重要）导出地址表元素个数
+    DWORD   NumberOfNames;         // （重要）导出名称表元素个数，导出序号表元素个数
+    DWORD   AddressOfFunctions;    // （重要）导出地址表地址（RVA）
+    DWORD   AddressOfNames;        // （重要）导出名称表地址（RVA）
+    DWORD   AddressOfNameOrdinals; // （重要）导出序号表地址（RVA）
+
+
+
+IMAGE_IMPORT_DESCRIPTOR             // 导入表数组元素，0结尾
+    union {                         // 
+        DWORD   Characteristics;    // 
+        DWORD   OriginalFirstThunk; // （重要）指向导入名称表
+    } DUMMYUNIONNAME;               // 
+    DWORD   TimeDateStamp;          // （瞎改）时间戳
+    DWORD   ForwarderChain;         // （瞎改）函数转发
+    DWORD   Name;                   // （重要）指向库名称
+    DWORD   FirstThunk;             // （重要）指向导入地址表
+
+IMAGE_THUNK_DATA32* []         // 导入名称表数组元素，0结尾
+    union {                    // 
+        DWORD ForwarderString; // 
+        DWORD Function;        // 
+        DWORD Ordinal;         // （使用）序号，最高位为1，说明是这个，低WORD是序号
+        DWORD AddressOfData;   // （使用）名称表数组地址，最高位为0，说明是这个
+    } u1;                      //
+
+IMAGE_IMPORT_BY_NAME // 名称表，0结尾
+WORD    Hint;        // 函数序号
+CHAR   Name[1];      // 函数名称
+
+IMAGE_THUNK_DATA32 []          // 导入地址表数组元素，原本和导入名称表指向相同地址，程序加载后指向API地址，0结尾
+    union {                    // 
+        DWORD ForwarderString; // 
+        DWORD Function;        // （使用）
+        DWORD Ordinal;         // 
+        DWORD AddressOfData;   // 
+    } u1;                      //
+
+
+
+// 资源表数组理论解析方式
+IMAGE_RESOURCE_DIRECTORY                               // 资源表数组元素
+    DWORD   Characteristics;                           // （瞎改）
+    DWORD   TimeDateStamp;                             // （瞎改）
+    WORD    MajorVersion;                              // （瞎改）
+    WORD    MinorVersion;                              // （瞎改）
+    WORD    NumberOfNamedEntries;                      // （重要）字符串命名资源个数
+    WORD    NumberOfIdEntries;                         // （重要）ID命名资源个数
+//  IMAGE_RESOURCE_DIRECTORY_ENTRY DirectoryEntries[]; // （重要）柔性数组，元素个数是上面两个个数的和
+
+IMAGE_RESOURCE_DIRECTORY_ENTRY            // 
+    union {                               // 
+        struct {                          // 
+            DWORD NameOffset:31;          // （重要）最高位是1，说明资源ID是字符串，低31位是节内偏移，指向IMAGE_RESOURCE_DIRECTORY_STRING结构
+            DWORD NameIsString:1;         // （重要）最高位
+        } DUMMYSTRUCTNAME;                // 
+        DWORD   Name;                     // 
+        WORD    Id;                       // （重要）最高位是0，说明资源ID是数值，低WORD是数值
+    } DUMMYUNIONNAME;                     // 
+    union {                               // 
+        DWORD   OffsetToData;             // （重要）偏移字段
+        struct {                          // 
+            DWORD   OffsetToDirectory:31; // （重要）最高位是1，说明是目录项，低31位是节内偏移，指向IMAGE_RESOURCE_DIRECTORY结构，最高位是0，说明是数据，低31位是节内偏移，指向IMAGE_RESOURCE_DATA_ENTRY结构
+            DWORD   DataIsDirectory:1;    // （重要）最高位
+        } DUMMYSTRUCTNAME2;               // 
+    } DUMMYUNIONNAME2;                    // 
+
+IMAGE_RESOURCE_DIRECTORY_STRING  // 帕斯克字符串
+    WORD    Length;              // （重要）字符串长度
+    WCHAR   NameString[ 1 ];     // （重要）字符串
+
+IMAGE_RESOURCE_DATA_ENTRY // 
+    DWORD   OffsetToData; // 资源偏移（RVA）
+    DWORD   Size;         // 资源大小
+    DWORD   CodePage;     // （瞎改）
+    DWORD   Reserved;     // （瞎改）
+
+
+
+// 资源表实际解析方式
+// 第一层是资源类型
+IMAGE_RESOURCE_DIRECTORY                               // 资源表
+    DWORD   Characteristics;                           // （瞎改）
+    DWORD   TimeDateStamp;                             // （瞎改）
+    WORD    MajorVersion;                              // （瞎改）
+    WORD    MinorVersion;                              // （瞎改）
+    WORD    NumberOfNamedEntries;                      // （重要）字符串命名资源个数
+    WORD    NumberOfIdEntries;                         // （重要）ID命名资源个数
+//  IMAGE_RESOURCE_DIRECTORY_ENTRY DirectoryEntries[]; // （重要）柔性数组，元素个数是上面两个个数的和
+IMAGE_RESOURCE_DIRECTORY_ENTRY            // 
+    union {                               // 
+        struct {                          // 
+            DWORD NameOffset:31;          // 
+            DWORD NameIsString:1;         // 
+        } DUMMYSTRUCTNAME;                // 
+        DWORD   Name;                     // （重要）第一层是资源类型
+            RT_CURSOR           MAKEINTRESOURCE(1) // 
+            RT_BITMAP           MAKEINTRESOURCE(2) // 
+            RT_ICON             MAKEINTRESOURCE(3) // 
+            RT_MENU             MAKEINTRESOURCE(4) // 
+            RT_DIALOG           MAKEINTRESOURCE(5) // 
+            RT_STRING           MAKEINTRESOURCE(6) // 
+            RT_FONTDIR          MAKEINTRESOURCE(7) // 
+            RT_FONT             MAKEINTRESOURCE(8) // 
+            RT_ACCELERATOR      MAKEINTRESOURCE(9) // 
+            RT_RCDATA           MAKEINTRESOURCE(10 // 
+            RT_MESSAGETABLE     MAKEINTRESOURCE(11 // 
+        WORD    Id;                       // 
+    } DUMMYUNIONNAME;                     // 
+    union {                               // 
+        DWORD   OffsetToData;             // 
+        struct {                          // 
+            DWORD   OffsetToDirectory:31; // （重要）目录项，低31位是节内偏移，指向IMAGE_RESOURCE_DIRECTORY结构
+            DWORD   DataIsDirectory:1;    // （重要）最高位是1
+        } DUMMYSTRUCTNAME2;               // 
+    } DUMMYUNIONNAME2;                    // 
+
+// 第二层是资源ID
+IMAGE_RESOURCE_DIRECTORY                               // 资源表
+    DWORD   Characteristics;                           // （瞎改）
+    DWORD   TimeDateStamp;                             // （瞎改）
+    WORD    MajorVersion;                              // （瞎改）
+    WORD    MinorVersion;                              // （瞎改）
+    WORD    NumberOfNamedEntries;                      // （重要）字符串命名资源个数
+    WORD    NumberOfIdEntries;                         // （重要）ID命名资源个数
+//  IMAGE_RESOURCE_DIRECTORY_ENTRY DirectoryEntries[]; // （重要）柔性数组，元素个数是上面两个个数的和
+IMAGE_RESOURCE_DIRECTORY_ENTRY            // 
+    union {                               // 
+        struct {                          // 
+            DWORD NameOffset:31;          // （重要）最高位是1，说明资源ID是字符串，低31位是节内偏移，指向IMAGE_RESOURCE_DIRECTORY_STRING结构
+            DWORD NameIsString:1;         // （重要）最高位
+        } DUMMYSTRUCTNAME;                // 
+        DWORD   Name;                     // 
+        WORD    Id;                       // （重要）最高位是0，说明资源ID是数值，低WORD是数值
+    } DUMMYUNIONNAME;                     // 
+    union {                               // 
+        DWORD   OffsetToData;             // 
+        struct {                          // 
+            DWORD   OffsetToDirectory:31; // （重要）目录项，低31位是节内偏移，指向IMAGE_RESOURCE_DIRECTORY结构
+            DWORD   DataIsDirectory:1;    // （重要）最高位是1
+        } DUMMYSTRUCTNAME2;               // 
+    } DUMMYUNIONNAME2;                    // 
+
+// 第三层是代码页
+    DWORD   Characteristics;                           // （瞎改）
+    DWORD   TimeDateStamp;                             // （瞎改）
+    WORD    MajorVersion;                              // （瞎改）
+    WORD    MinorVersion;                              // （瞎改）
+    WORD    NumberOfNamedEntries;                      // （重要）字符串命名资源个数
+    WORD    NumberOfIdEntries;                         // （重要）ID命名资源个数
+//  IMAGE_RESOURCE_DIRECTORY_ENTRY DirectoryEntries[]; // （重要）柔性数组，元素个数是上面两个个数的和
+IMAGE_RESOURCE_DIRECTORY_ENTRY            // 
+    union {                               // 
+        struct {                          // 
+            DWORD NameOffset:31;          // 
+            DWORD NameIsString:1;         // 
+        } DUMMYSTRUCTNAME;                // 
+        DWORD   Name;                     // （重要）代码页
+        WORD    Id;                       // 
+    } DUMMYUNIONNAME;                     // 
+    union {                               // 
+        DWORD   OffsetToData;             // 
+        struct {                          // 
+            DWORD   OffsetToDirectory:31; // （重要）数据，低31位是节内偏移，指向IMAGE_RESOURCE_DATA_ENTRY结构
+            DWORD   DataIsDirectory:1;    // （重要）最高位是0
+        } DUMMYSTRUCTNAME2;               // 
+    } DUMMYUNIONNAME2;                    // 
+
+IMAGE_RESOURCE_DIRECTORY_STRING  // 帕斯卡字符
+    WORD    Length;              // （重要）字符串长度
+    WCHAR   NameString[ 1 ];     // （重要）字符串
+
+IMAGE_RESOURCE_DATA_ENTRY // 
+    DWORD   OffsetToData; // （重要）资源偏移（RVA）
+    DWORD   Size;         // （重要）资源大小
+    DWORD   CodePage;     // （瞎改）
+    DWORD   Reserved;     // （瞎改）
+
+typedef struct _IMAGE_RELOCATION {
+    union {
+        DWORD   VirtualAddress;
+        DWORD   RelocCount;             // Set to the real count when IMAGE_SCN_LNK_NRELOC_OVFL is set
+    } DUMMYUNIONNAME;
+    DWORD   SymbolTableIndex;
+    WORD    Type;
+} IMAGE_RELOCATION;
+typedef IMAGE_RELOCATION UNALIGNED *PIMAGE_RELOCATION;
+
+
+
+IMAGE_BASE_RELOCATION       // 重定位表数组元素
+    DWORD   VirtualAddress; // 分页基址（RVA）
+    DWORD   SizeOfBlock;    // 总大小
+//  WORD    TypeOffset[1];  // 页内偏移柔性数组，元素个数是(SizeOfBlock-8)/2，低12位是节内偏移，高4位是【0/3】【需要/不需要】重定位，0项为了对齐
+修正前地址VA=内存[分页基址RVA+页内偏移+实际基址IB]。
+修正后地址VA=修正前地址VA-文件基址IB+实际基址IB。
+
+
+
+IMAGE_TLS_DIRECTORY                // TLS表
+    DWORD   StartAddressOfRawData; // （重要）隐式tls变量存储起始地址（VA）
+    DWORD   EndAddressOfRawData;   // （重要）隐式tls变量存储结束地址（VA）
+    DWORD   AddressOfIndex;        // （重要）索引地址（VA），这个地址的值一直是0
+    DWORD   AddressOfCallBacks;    // （重要）tls回调函数地址数组地址（VA），可以填多个
+    DWORD   SizeOfZeroFill;        // 
+    union {                        // 
+        DWORD Characteristics;     // 
+        struct {                   // 
+            DWORD Reserved0 : 20;  // 
+            DWORD Alignment : 4;   // 
+            DWORD Reserved1 : 8;   // 
+        } DUMMYSTRUCTNAME;         // 
+    } DUMMYUNIONNAME;              // 
+
+VOID NTAPI PIMAGE_TLS_CALLBACK ( // TLS回调函数 
+    PVOID DllHandle,             // 
+    DWORD Reason,                // 
+    PVOID Reserved               // 
+    )
+{
+    switch (Reason)
+    {
+    case DLL_PROCESS_ATTACH:
+        break;
+    case DLL_PROCESS_DETACH:
+        break;
+    case DLL_THREAD_ATTACH:
+        break;
+    case DLL_THREAD_DETACH:
+        break;
+    }
+}
