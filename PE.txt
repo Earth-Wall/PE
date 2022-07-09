@@ -192,7 +192,7 @@ IMAGE_THUNK_DATA32* []         // 导入名称表数组元素，0结尾
         DWORD AddressOfData;   // （使用）名称表数组地址，最高位为0，说明是这个
     } u1;                      //
 
-IMAGE_IMPORT_BY_NAME // 名称表，0结尾
+IMAGE_IMPORT_BY_NAME // 名称表
 WORD    Hint;        // 函数序号
 CHAR   Name[1];      // 函数名称
 
